@@ -1,107 +1,70 @@
 [![Multi-Modality](agorabanner.png)](https://discord.gg/qUtxnK2NMf)
 
-# Python Package Template
-A easy, reliable, fluid template for python packages complete with docs, testing suites, readme's, github workflows, linting and much much more
+Below is a template for a technical README.md file for the implementation of the FastBERT paper. This README provides an overview of the project, including a description, installation instructions, usage guidelines, details on the architecture, and the algorithmic pseudocode.
 
+---
+
+# FastBERT Implementation
+
+## Description
+This project implements the feedforward from FastBERT (Fast Bidirectional Encoder Representations from Transformers) model. FastBERT is a BERT-like model optimized for efficient inference, utilizing a novel Conditional Matrix Multiplication (CMM) technique within a Fast Feedforward Network (FFF). The model aims to achieve high performance on natural language processing tasks with significantly reduced computational cost.
 
 ## Installation
 
-You can install the package using pip
+To use this implementation, ensure you have Python and PyTorch installed. You can install the required dependencies using the following command:
 
 ```bash
-pip install -e .
-```
-## Structure
-```
-├── LICENSE
-├── Makefile
-├── README.md
-├── agorabanner.png
-├── example.py
-├── package
-│   ├── __init__.py
-│   ├── main.py
-│   └── subfolder
-│       ├── __init__.py
-│       └── main.py
-├── pyproject.toml
-└── requirements.txt
-
-2 directories, 11 files
-```
-# Usage
-
-# Documentation
-
-
-### Code Quality 🧹
-
-We provide two handy commands inside the `Makefile`, namely:
-
-- `make style` to format the code
-- `make check_code_quality` to check code quality (PEP8 basically)
-
-So far, **there is no types checking with mypy**. See [issue](https://github.com/roboflow-ai/template-python/issues/4). 
-
-### Tests 🧪
-
-[`pytests`](https://docs.pytest.org/en/7.1.x/) is used to run our tests.
-
-### Publish on PyPi 🚀
-
-**Important**: Before publishing, edit `__version__` in [src/__init__](/src/__init__.py) to match the wanted new version.
-
-We use [`twine`](https://twine.readthedocs.io/en/stable/) to make our life easier. You can publish by using
-
-```
-export PYPI_USERNAME="you_username"
-export PYPI_PASSWORD="your_password"
-export PYPI_TEST_PASSWORD="your_password_for_test_pypi"
-make publish -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -e PYPI_TEST_PASSWORD=$PYPI_TEST_PASSWORD
+pip install torch
 ```
 
-You can also use token for auth, see [pypi doc](https://pypi.org/help/#apitoken). In that case,
+## Usage
 
+To use the FastBERT model, first import the necessary classes and create an instance of the model. You can then pass input data to the model for training or inference. Example usage is as follows:
+
+```python
+from fastbert import FastFeedForward
+import torch
+
+# Parameters
+input_dim = 768
+output_dim = 768
+depth = 11
+
+# Model initialization
+fast_ff = FastFeedForward(input_dim, output_dim, depth)
+
+# Example input (batch_size, seq_len, input_dim)
+example_input = torch.randn(32, 128, input_dim)
+
+# Forward pass
+output = fast_ff(example_input)
 ```
-export PYPI_USERNAME="__token__"
-export PYPI_PASSWORD="your_token"
-export PYPI_TEST_PASSWORD="your_token_for_test_pypi"
-make publish -e PYPI_USERNAME=$PYPI_USERNAME -e PYPI_PASSWORD=$PYPI_PASSWORD -e PYPI_TEST_PASSWORD=$PYPI_TEST_PASSWORD
-```
 
-**Note**: We will try to push to [test pypi](https://test.pypi.org/) before pushing to pypi, to assert everything will work
+## Architecture
 
-### CI/CD 🤖
+FastBERT's architecture starts from the crammedBERT model but replaces the feedforward networks in the transformer encoder layers with fast feedforward networks. Each transformer encoder layer uses multiple FFF trees to compute the intermediate layer outputs, which are then summed to form the final output.
 
-We use [GitHub actions](https://github.com/features/actions) to automatically run tests and check code quality when a new PR is done on `main`.
+### Key Components:
+- **Conditional Matrix Multiplication (CMM)**: A technique used for efficient computation within the FFF.
+- **Fast Feedforward Network (FFF)**: Replaces traditional dense feedforward layers, using fewer neurons selectively for inference.
+- **Activation Function**: GeLU (Gaussian Error Linear Unit) is used across all nodes in the FFF.
 
-On any pull request, we will check the code quality and tests.
+## Algorithmic Pseudocode
 
-When a new release is created, we will try to push the new code to PyPi. We use [`twine`](https://twine.readthedocs.io/en/stable/) to make our life easier. 
+### Fast Feedforward Network (FFF)
+1. **Initialization**:
+   - Define `input_dim`, `output_dim`, and `depth`.
+   - Initialize `weights_in` and `weights_out` for CMM.
 
-The **correct steps** to create a new realease are the following:
-- edit `__version__` in [src/__init__](/src/__init__.py) to match the wanted new version.
-- create a new [`tag`](https://git-scm.com/docs/git-tag) with the release name, e.g. `git tag v0.0.1 && git push origin v0.0.1` or from the GitHub UI.
-- create a new release from GitHub UI
+2. **CMM Function**:
+   - For each depth level, compute logits and update node indices.
+   - Perform batch-wise matrix-vector multiplication using `einsum`.
 
-The CI will run when you create the new release.
+3. **Forward Pass**:
+   - Apply CMM to input.
+   - Apply activation function.
+   - Aggregate outputs for each depth using `einsum`.
 
-# Docs
-We use MK docs. This repo comes with the zeta docs. All the docs configurations are already here along with the readthedocs configs
-
-# Q&A
-
-## Why no cookiecutter?
-This is a template repo, it's meant to be used inside GitHub upon repo creation.
-
-## Why reinvent the wheel?
-
-There are several very good templates on GitHub, I prefer to use code we wrote instead of blinding taking the most starred template and having features we don't need. From experience, it's better to keep it simple and general enough for our specific use cases.
-
-# Architecture
-
-# License
-MIT
-
-
-
+### Training and Inference
+- FastBERT is trained following the crammedBERT procedure, with dropout disabled and a 1-cycle triangular learning rate schedule.
+- For inference, FastBERT utilizes the FFF with a reduced number of active neurons, achieving efficient computation.
