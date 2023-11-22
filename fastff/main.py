@@ -58,15 +58,13 @@ class FastFeedForward(nn.Module):
         weight = self.weights_in[selected_indices]
 
         # Perform the batch-wise matrix-vector multiplication
-        logits = torch.einsum('bij,bij->bi', inputs, weight)
+        logits = torch.einsum("bij,bij->bi", inputs, weight)
 
         # Calculate new indices and clamp them within the valid range
         new_indices = 2 * selected_indices + 1 + (logits > 0).long()
         new_indices = torch.clamp(new_indices, 0, max_index)
 
         return logits, new_indices
-
-
 
     def forward(self, inputs):
         """
@@ -82,7 +80,11 @@ class FastFeedForward(nn.Module):
 
             # Corrected einsum operation
             # 'bij,bij->bi' performs batch-wise matrix-vector multiplication
-            outputs += torch.einsum("bij,bij->bi", activated_logits[:, :, d].unsqueeze(-1), weight_out.unsqueeze(-1))
+            outputs += torch.einsum(
+                "bij,bij->bi",
+                activated_logits[:, :, d].unsqueeze(-1),
+                weight_out.unsqueeze(-1),
+            )
 
         return outputs
 
